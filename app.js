@@ -33,3 +33,44 @@ function callback(req, res) {
           }
      );
 }
+// Módulo Database
+var db = require('./db');
+// Módulo Socket.IO
+var io = require('socket.io')(app);
+
+// Conexão do cliente com o servidor
+io.on("connection", function (socket) {
+
+     socket.on("nova jogada", function (params, callback) {
+          io.sockets.emit("nova jogada", params);
+          if (callback) callback();
+     });
+
+     socket.on("novo jogo", function (params, callback) {
+          io.sockets.emit("novo jogo", params);
+          if (callback) callback();
+     });
+
+     socket.on("exibir placar", function (params, callback) {
+          db.getScore((err, result) => {
+               if (err) { return console.log(err); }
+               io.sockets.emit("exibir placar", result);
+               if (callback) callback();
+          });
+     });
+
+     socket.on("zerar placar", function (params, callback) {
+          db.resetScoreboard((err, result) => {
+               if (err) { return console.log(err); }
+               io.sockets.emit("zerar placar", params);
+               if (callback) callback();
+          });
+     });
+
+     socket.on("vitoria", function (params, callback) {
+          db.updateScore(params.name, params.points, (err, result) => {
+               if (err) { return console.log(err); }
+          });
+          if (callback) callback();
+     });
+});

@@ -6,6 +6,7 @@
   <link type="text/css" rel='stylesheet' href='/css/style.css' />
 </head>
 
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
 <body>
   
   <div style="background: #1abc9c; border-radius:14px; padding:14px">
@@ -23,27 +24,61 @@
   <script src="/js/game.js"></script>
   <script>
     var game = new TicTacToe();
+    var socket = io.connect();
+
+    //-------------------------------------------------------
 
     $("#canvas").on("click", function () {
-      if (game.status == "") {
-        var params = game.newPlay();
-        game.renderSymbol(params.row, params.col);
-        game.changePlayer();
-      }
+      socket.emit("nova jogada", game.newPlay());
     });
 
+    socket.on("nova jogada", function (params) {
+      game.renderSymbol(params.row, params.col);
+
+      if (game.status == "vitoria") {
+        socket.emit("vitoria", {
+          name: game.currentPlayer.name,
+          points: 10
+        });
+      }
+
+      if (game.status != "empate") {
+        game.changePlayer();
+      }
+
+    });
+
+    // -------------------------------------------------------
+
     $("#btn-newgame").on("click", function () {
+      socket.emit("novo jogo");
+    });
+
+    socket.on("novo jogo", function (params) {
       game.newGame();
     });
 
+    //-------------------------------------------------------
+
     $("#btn-scoreboard").on("click", function () {
+      socket.emit("exibir placar");
+    });
+
+    socket.on("exibir placar", function (score) {
+      game.showScoreboard(score);
+    });
+
+    //-------------------------------------------------------
+
+    $("#btn-reset-scoreboard").on("click", function () {
+      socket.emit("zerar placar");
+    });
+
+    socket.on("zerar placar", function (score) {
       game.showScoreboard(null);
     });
 
-    $("#btn-reset-scoreboard").on("click", function () {
-      game.showScoreboard(null);
-    });
-</script>
+  </script>
 </body>
 
 </html>
